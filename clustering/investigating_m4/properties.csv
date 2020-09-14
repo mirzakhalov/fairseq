@@ -1,0 +1,101 @@
+Language Code,Language Name,Family,Sub-Family,Script,Morphological Typology
+af,Afrikaans,Indo-European,Germanic,Roman,Weakly Fusional
+am,Amharic,Afroasiatic,Semitic,Ge'ez,Fusional
+ar,Arabic,Afroasiatic,Semitic,Arabic,Fusional
+az,Azerbaijani,Turkic,Common Turkic,Roman,Agglutinative
+be,Belarusian,Indo-European,Slavic,Cyrillic,Fusional
+bg,Bulgarian,Indo-European,Slavic,Cyrillic,Fusional
+bn,Bengali,Indo-European,Indo-Iranian,Eastern Nagari,Fusional
+ca,Catalan,Indo-European,Romance,Roman,Fusional
+ceb,Cebuano,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+co,Corsican,Indo-European,Romance,Roman,Fusional
+cs,Czech,Indo-European,Slavic,Roman,Fusional
+cy,Welsh,Indo-European,Celtic,Roman,Fusional
+da,Danish,Indo-European,Germanic,Roman,Analytic
+de,German,Indo-European,Germanic,Roman,Fusional
+el,Greek,Indo-European,Hellenic,Greek,Fusional
+eo,Esperanto,Constructed,International auxiliary language,Roman,Agglutinative
+es,Spanish,Indo-European,Romance,Roman,Fusional
+et,Estonian,Uralic,Finnic,Roman,Agglutinative
+eu,Basque,Vasconic,Basque,Roman,Agglutinative
+fa,Persian,Indo-European,Indo-Iranian,Arabic,Agglutinative
+fi,Finnish,Uralic,Finnic,Roman,Agglutinative
+fr,French,Indo-European,Romance,Roman,Fusional
+fy,Frisian,Indo-European,Germanic,Roman,Weakly Fusional
+ga,Irish,Indo-European,Celtic,Roman,Fusional
+gd,Scots_Gaelic,Indo-European,Celtic,Roman,Fusional
+gl,Galician,Indo-European,Romance,Roman,Fusional
+gu,Gujarati,Indo-European,Indo-Iranian,Gujarati,Fusional
+ha,Hausa,Afroasiatic,Chadic,Roman,Fusional
+haw,Hawaiian,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+hi,Hindi,Indo-European,Indo-Iranian,Devanagari,Fusional
+hmn,Hmong,Hmong–Mien,Hmongic,Roman,Analytic
+hr,Croatian,Indo-European,Slavic,Roman,Fusional
+ht,Haitian_Creole,Indo-European,Romance,Roman,Fusional
+hu,Hungarian,Uralic,Finno-Ugric,Roman,Agglutinative
+hy,Armenian,Indo-European,Armenian,Armenian,Agglutinative
+id,Indonesian,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+ig,Igbo,Niger-Congo: Atlantic Congo,Volta-Congo,Roman,Agglutinative
+is,Icelandic,Indo-European,Germanic,Roman,Fusional
+it,Italian,Indo-European,Romance,Roman,Fusional
+iw,Hebrew,Afroasiatic,Semitic,Hebrew,Weakly Fusional
+ja,Japanese,Japonic,Japanese,Japanese,Agglutinative
+jw,Javanese,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+ka,Georgian,Kartvelian,Karto-Zan,Georgian,Agglutinative
+kk,Kazakh,Turkic,Common Turkic,Cyrillic,Agglutinative
+km,Khmer,Austroasiatic,Khmer,Khmer,Analytic
+kn,Kannada,Dravidian,South Dravidian,Kannada,Agglutinative
+ko,Korean,Koreanic,Buyeo,Hangul,Agglutinative
+ku,Kurdish,Indo-European,Indo-Iranian,Arabic,Fusional
+ky,Kyrgyz,Turkic,Common Turkic,Cyrillic,Agglutinative
+lb,Luxembourgish,Indo-European,Germanic,Roman,Fusional
+lo,Laothian,Kra-Dai,Tai,Lao,Analytic
+lt,Lithuanian,Indo-European,Baltic,Roman,Fusional
+lv,Latvian,Indo-European,Baltic,Roman,Fusional
+mg,Malagasy,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+mi,Maori,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+mk,Macedonian,Indo-European,Slavic,Cyrillic,Fusional
+ml,Malayalam,Dravidian,South Dravidian,Malayalam,Agglutinative
+mn,Mongolian,Mongolic,Mongolian,Cyrillic,Agglutinative
+mr,Marathi,Indo-European,Indo-Iranian,Devanagari,Fusional
+ms,Malay,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+mt,Maltese,Afroasiatic,Semitic,Roman,Fusional
+my,Burmese,Sino-Tibetan,Lolo-Burmese,Burmese,Analytic
+ne,Nepali,Indo-European,Indo-Iranian,Devanagari,Fusional
+nl,Dutch,Indo-European,Germanic,Roman,Fusional
+no,Norwegian,Indo-European,Germanic,Roman,Fusional
+ny,Nyanja,Niger-Congo: Atlantic Congo,Benue-Congo,Roman,Agglutinative
+pa,Punjabi,Indo-European,Indo-Iranian,Gurmukhi,Fusional
+pl,Polish,Indo-European,Slavic,Roman,Fusional
+ps,Pashto,Indo-European,Indo-Iranian,Arabic,Fusional
+pt,Portuguese,Indo-European,Romance,Roman,Fusional
+ro,Romanian,Indo-European,Romance,Roman,Fusional
+ru,Russian,Indo-European,Slavic,Cyrillic,Fusional
+sd,Sindhi,Indo-European,Indo-Iranian,Arabic,Fusional
+si,Sinhalese,Indo-European,Indo-Iranian,Sinhalese,Fusional
+sk,Slovak,Indo-European,Slavic,Roman,Fusional
+sl,Slovenian,Indo-European,Slavic,Roman,Fusional
+sm,Samoan,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+sn,Shona,Niger-Congo: Atlantic Congo,Benue-Congo,Roman,Agglutinative
+so,Somali,Afroasiatic,Cushitic,Roman,Agglutinative
+sq,Albanian,Indo-European,Albanian,Roman,Fusional
+sr,Serbian,Indo-European,Slavic,Cyrillic,Fusional
+st,Sesotho,Niger-Congo: Atlantic Congo,Benue-Congo,Roman,Agglutinative
+su,Sundanese,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+sv,Swedish,Indo-European,Germanic,Roman,Fusional
+sw,Swahili,Niger-Congo: Atlantic Congo,Benue-Congo,Roman,Agglutinative
+ta,Tamil,Dravidian,South Dravidian,Tamil,Agglutinative
+te,Telugu,Dravidian,South-Central Dravidian,Telugu,Agglutinative
+tg,Tajik,Indo-European,Indo-Iranian,Cyrillic,Fusional
+th,Thai,Kra-Dai,Tai,Thai,Analytic
+tl,Filipino/Tagalog,Austronesian,Malayo-Polynesian,Roman,Agglutinative
+tr,Turkish,Turkic,Common Turkic,Roman,Agglutinative
+uk,Ukrainian,Indo-European,Slavic,Cyrillic,Fusional
+ur,Urdu,Indo-European,Indo-Iranian,Arabic,Fusional
+uz,Uzbek,Turkic,Common Turkic,Roman,Agglutinative
+vi,Vietnamese,Austroasiatic,Vietic,Roman,Analytic
+xh,Xhosa,Niger-Congo: Atlantic Congo,Benue-Congo,Roman,Agglutinative
+yi,Yiddish,Indo-European,Germanic,Hebrew,Fusional
+yo,Yoruba,Niger-Congo: Atlantic Congo,Volta-Niger,Roman,Analytic
+zh,Chinese,Sino-Tibetan,Sinitic,Chinese,Analytic
+zu,Zulu,Niger-Congo: Atlantic Congo,Benue-Congo,Roman,Agglutinative
