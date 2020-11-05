@@ -349,6 +349,7 @@ class Trainer(object):
                 combine=combine,
                 data_selector=data_selector,
             )
+        
         return self.task.get_batch_iterator(
             dataset=self.task.dataset(self.args.train_subset),
             max_tokens=self.args.max_tokens,
@@ -406,6 +407,9 @@ class Trainer(object):
 
     @metrics.aggregate("train")
     def train_step(self, samples, raise_oom=False):
+        #print('samples')
+        
+       # print(len(samples))
         """Do forward, backward and parameter update."""
         if self._dummy_batch == "DUMMY":
             self._dummy_batch = samples[0]

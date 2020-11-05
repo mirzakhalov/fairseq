@@ -26,6 +26,7 @@ from fairseq.modules import (
     SinusoidalPositionalEmbedding,
     TransformerDecoderLayer,
     TransformerEncoderLayer,
+    TransformerClusterEncoderLayer
 )
 from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
 from torch import Tensor
@@ -254,6 +255,7 @@ class TransformerModel(FairseqEncoderDecoderModel):
         self,
         src_tokens,
         src_lengths,
+        cluster_ids,
         prev_output_tokens,
         return_all_hiddens: bool = True,
         features_only: bool = False,
@@ -266,8 +268,9 @@ class TransformerModel(FairseqEncoderDecoderModel):
         Copied from the base class, but without ``**kwargs``,
         which are not supported by TorchScript.
         """
+      
         encoder_out = self.encoder(
-            src_tokens, src_lengths=src_lengths, return_all_hiddens=return_all_hiddens
+            src_tokens, cluster_ids, src_lengths=src_lengths, return_all_hiddens=return_all_hiddens
         )
         decoder_out = self.decoder(
             prev_output_tokens,
@@ -352,6 +355,10 @@ class TransformerEncoder(FairseqEncoder):
         self.layers.extend(
             [self.build_encoder_layer(args) for i in range(args.encoder_layers)]
         )
+
+        # add the cluster encoder
+        self.layers.extend([TransformerClusterEncoderLayer(args)])
+
         self.num_layers = len(self.layers)
 
         if args.encoder_normalize_before:
@@ -374,7 +381,7 @@ class TransformerEncoder(FairseqEncoder):
             x = self.quant_noise(x)
         return x, embed
 
-    def forward(self, src_tokens, src_lengths, return_all_hiddens: bool = False):
+    def forward(self, src_tokens, cluster_ids, src_lengths, return_all_hiddens: bool = False):
         """
         Args:
             src_tokens (LongTensor): tokens in the source language of shape
@@ -396,6 +403,7 @@ class TransformerEncoder(FairseqEncoder):
                   hidden states of shape `(src_len, batch, embed_dim)`.
                   Only populated if *return_all_hiddens* is True.
         """
+       # print(src_tokens)
         x, encoder_embedding = self.forward_embedding(src_tokens)
 
         # B x T x C -> T x B x C
@@ -408,7 +416,10 @@ class TransformerEncoder(FairseqEncoder):
 
         # encoder layers
         for layer in self.layers:
-            x = layer(x, encoder_padding_mask)
+            if isinstance(layer, TransformerClusterEncoderLayer):
+                x = layer(x, encoder_padding_mask, int(cluster_ids[0]))
+            else:
+                x = layer(x, encoder_padding_mask)
             if return_all_hiddens:
                 assert encoder_states is not None
                 encoder_states.append(x)

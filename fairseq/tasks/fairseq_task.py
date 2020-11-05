@@ -108,7 +108,7 @@ class FairseqTask(object):
 
         if split not in self.datasets:
             raise KeyError("Dataset not loaded: " + split)
-        if not isinstance(self.datasets[split], FairseqDataset):
+        if not isinstance(self.datasets[split], FairseqDataset) and not isinstance(self.datasets[split], list):
             raise TypeError("Datasets are expected to be of type FairseqDataset")
         return self.datasets[split]
 
@@ -192,46 +192,106 @@ class FairseqTask(object):
         # For default fairseq task, return same iterator across epochs
         # as datasets are not dynamic, can be overridden in task specific
         # setting.
-        if dataset in self.dataset_to_epoch_iter:
-            return self.dataset_to_epoch_iter[dataset]
 
-        assert isinstance(dataset, FairseqDataset)
+        if not isinstance(dataset, list):
 
-        # initialize the dataset with the correct starting epoch
-        dataset.set_epoch(epoch)
+            if dataset in self.dataset_to_epoch_iter:
+                return self.dataset_to_epoch_iter[dataset]
 
-        # get indices ordered by example size
-        with data_utils.numpy_seed(seed):
-            indices = dataset.ordered_indices()
+            assert isinstance(dataset, FairseqDataset)
 
-        # filter examples that are too large
-        if max_positions is not None:
-            indices = self.filter_indices_by_size(
-                indices, dataset, max_positions, ignore_invalid_inputs
+            # initialize the dataset with the correct starting epoch
+            dataset.set_epoch(epoch)
+
+            # get indices ordered by example size
+            with data_utils.numpy_seed(seed):
+                indices = dataset.ordered_indices()
+
+            # filter examples that are too large
+            if max_positions is not None:
+                indices = self.filter_indices_by_size(
+                    indices, dataset, max_positions, ignore_invalid_inputs
+                )
+
+            # create mini-batches with given size constraints
+            batch_sampler = dataset.batch_by_size(
+                indices,
+                max_tokens=max_tokens,
+                max_sentences=max_sentences,
+                required_batch_size_multiple=required_batch_size_multiple,
             )
 
-        # create mini-batches with given size constraints
-        batch_sampler = dataset.batch_by_size(
-            indices,
-            max_tokens=max_tokens,
-            max_sentences=max_sentences,
-            required_batch_size_multiple=required_batch_size_multiple,
-        )
+            # return a reusable, sharded iterator
+            epoch_iter = iterators.EpochBatchIterator(
+                dataset=dataset,
+                collate_fn=dataset.collater,
+                batch_sampler=batch_sampler,
+                seed=seed,
+                num_shards=num_shards,
+                shard_id=shard_id,
+                num_workers=num_workers,
+                epoch=epoch,
+                buffer_size=getattr(self.args, 'data_buffer_size', 0),
+            )
 
-        # return a reusable, sharded iterator
-        epoch_iter = iterators.EpochBatchIterator(
-            dataset=dataset,
-            collate_fn=dataset.collater,
-            batch_sampler=batch_sampler,
-            seed=seed,
-            num_shards=num_shards,
-            shard_id=shard_id,
-            num_workers=num_workers,
-            epoch=epoch,
-            buffer_size=getattr(self.args, 'data_buffer_size', 0),
-        )
-        self.dataset_to_epoch_iter[dataset] = epoch_iter
-        return epoch_iter
+            self.dataset_to_epoch_iter[dataset] = epoch_iter
+
+            return epoch_iter
+
+
+
+
+
+
+        else:
+            datasets = dataset
+            epoch_iters = []
+
+            for i in range(0, len(datasets)):
+                dataset = datasets[i]
+                assert isinstance(dataset, FairseqDataset)
+
+                # initialize the dataset with the correct starting epoch
+                dataset.set_epoch(epoch)
+
+                # get indices ordered by example size
+                with data_utils.numpy_seed(seed):
+                    indices = dataset.ordered_indices()
+
+                # filter examples that are too large
+                if max_positions is not None:
+                    indices = self.filter_indices_by_size(
+                        indices, dataset, max_positions, ignore_invalid_inputs
+                    )
+
+                # create mini-batches with given size constraints
+                batch_sampler = dataset.batch_by_size(
+                    indices,
+                    max_tokens=max_tokens,
+                    max_sentences=max_sentences,
+                    required_batch_size_multiple=required_batch_size_multiple,
+                )
+
+
+
+                # return a reusable, sharded iterator
+                epoch_iter = iterators.EpochBatchIterator(
+                    dataset=dataset,
+                    collate_fn=dataset.collater,
+                    batch_sampler=batch_sampler,
+                    seed=seed,
+                    num_shards=num_shards,
+                    shard_id=shard_id,
+                    num_workers=num_workers,
+                    epoch=epoch,
+                    buffer_size=getattr(self.args, 'data_buffer_size', 0),
+                )
+
+                epoch_iters.append(epoch_iter)
+
+            self.dataset_to_epoch_iter[dataset] = epoch_iters
+
+            return epoch_iters
 
     def build_model(self, args):
         """
@@ -384,6 +444,7 @@ class FairseqTask(object):
         """
         model.train()
         model.set_num_updates(update_num)
+
         with torch.autograd.profiler.record_function("forward"):
             loss, sample_size, logging_output = criterion(model, sample)
         if ignore_grad:

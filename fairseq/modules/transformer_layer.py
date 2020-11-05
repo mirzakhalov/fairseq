@@ -111,6 +111,7 @@ class TransformerEncoderLayer(nn.Module):
         if attn_mask is not None:
             attn_mask = attn_mask.masked_fill(attn_mask.to(torch.bool), -1e8)
 
+
         residual = x
         if self.normalize_before:
             x = self.self_attn_layer_norm(x)

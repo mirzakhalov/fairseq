@@ -138,6 +138,7 @@ class IndexedDataset(FairseqDataset):
             code, self.element_size = struct.unpack('<QQ', f.read(16))
             self.dtype = dtypes[code]
             self._len, self.s = struct.unpack('<QQ', f.read(16))
+            
             self.dim_offsets = read_longs(f, self._len + 1)
             self.data_offsets = read_longs(f, self._len + 1)
             self.sizes = read_longs(f, self.s)

@@ -381,7 +381,7 @@ class EpochBatchIterator(EpochBatchIterating):
         if self.num_workers > 0:
             os.environ['PYTHONWARNINGS'] = 'ignore:semaphore_tracker:UserWarning'
 
-        # Create data loader
+       
         itr = torch.utils.data.DataLoader(
             self.dataset,
             collate_fn=self.collate_fn,
@@ -394,7 +394,7 @@ class EpochBatchIterator(EpochBatchIterating):
         if self.buffer_size > 0:
             itr = BufferedIterator(self.buffer_size, itr)
 
-        # Wrap with CoutingIterator
+        # Wrap with CountingIterator
         itr = CountingIterator(itr, start=offset)
         return itr
 
@@ -411,6 +411,7 @@ class GroupedIterator(CountingIterator):
     """
 
     def __init__(self, iterable, chunk_size):
+
         itr = _chunk_iterator(iterable, chunk_size)
         super().__init__(
             itr,
@@ -429,7 +430,6 @@ def _chunk_iterator(itr, chunk_size):
             chunk = []
     if len(chunk) > 0:
         yield chunk
-
 
 class ShardedIterator(CountingIterator):
     """A sharded wrapper around an iterable, padded to length.

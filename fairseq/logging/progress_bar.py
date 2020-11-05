@@ -16,6 +16,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from numbers import Number
 from typing import Optional
+import numpy
 
 import torch
 
@@ -47,6 +48,8 @@ def progress_bar(
         bar = SimpleProgressBar(iterator, epoch, prefix, log_interval)
     elif log_format == 'tqdm':
         bar = TqdmProgressBar(iterator, epoch, prefix)
+    elif log_format == 'simplecluster':
+        bar = SimpleClusteredProgressBar(iterator, epoch, prefix)
     else:
         raise ValueError('Unknown log format: {}'.format(log_format))
 
@@ -260,6 +263,60 @@ class SimpleProgressBar(BaseProgressBar):
                 logger.info(
                     '{}:  {:5d} / {:d} {}'
                     .format(self.prefix, self.i + 1, self.size, postfix)
+                )
+
+    def print(self, stats, tag=None, step=None):
+        """Print end-of-epoch stats."""
+        postfix = self._str_pipes(self._format_stats(stats))
+        with rename_logger(logger, tag):
+            logger.info('{} | {}'.format(self.prefix, postfix))
+
+class SimpleClusteredProgressBar(object):
+    """A minimal logger for non-TTY environments."""
+
+    def __init__(self, iterables, epoch=None, prefix=None, log_interval=1000):
+        self.iterables = iterables
+        self.n = []
+        for itr in self.iterables:
+            self.n.append(getattr(itr, 'n', 0))
+        self.epoch = epoch
+        self.prefix = ''
+        if epoch is not None:
+            self.prefix += 'epoch {:03d}'.format(epoch)
+        if prefix is not None:
+            self.prefix += ' | {}'.format(prefix)
+        self.log_interval = log_interval
+        self.i = [0]*len(self.iterables)
+        self.size = 0
+        self.itr_index = dict()
+
+    def __iter__(self):
+        for itr in self.iterables:
+            self.size += len(itr)
+        index = 0
+        total = sum([len(itr) for itr in self.iterables])
+        for i in range(total):
+            obj = next(self.iterables[index])
+            obj[0]['net_input']['cluster_ids'] = numpy.full((1), index, dtype=numpy.single)
+            yield obj
+            self.i[index] = i
+            index += 1
+            index = index % len(self.iterables)
+
+    def log(self, stats, tag=None, step=None):
+        """Log intermediate stats according to log_interval."""
+        step = step or self.i or 0
+        if (
+            step > 0
+            and self.log_interval is not None
+            and step % self.log_interval == 0
+        ):
+            stats = self._format_stats(stats)
+            postfix = self._str_commas(stats)
+            with rename_logger(logger, tag):
+                logger.info(
+                    '{}:  {:5d} / {:d} {}'
+                    .format(self.prefix, sum(self.i) + 1, self.size, postfix)
                 )
 
     def print(self, stats, tag=None, step=None):

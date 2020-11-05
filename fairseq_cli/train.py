@@ -28,6 +28,7 @@ from fairseq.data import iterators
 from fairseq.logging import meters, metrics, progress_bar
 from fairseq.model_parallel.megatron_trainer import MegatronTrainer
 from fairseq.trainer import Trainer
+import numpy
 
 
 logging.basicConfig(
@@ -59,7 +60,6 @@ def main(args):
 
     # Setup task, e.g., translation, language modeling, etc.
     task = tasks.setup_task(args)
-
     # Load valid dataset (we load training data below, based on the latest checkpoint)
     for valid_sub_split in args.valid_subset.split(","):
         task.load_dataset(valid_sub_split, combine=False, epoch=1)
@@ -109,7 +109,38 @@ def main(args):
     # corresponding train iterator
     extra_state, epoch_itr = checkpoint_utils.load_checkpoint(args, trainer)
 
+    # cluster epoch iterator
+    if isinstance(epoch_itr, list):
+        max_epoch = args.max_epoch or math.inf
+        lr = trainer.get_lr()
+        train_meter = meters.StopwatchMeter()
+        train_meter.start()
+
+        while lr > args.min_lr and epoch_itr[0].next_epoch_idx <= max_epoch:
+            # train for one epoch
+            valid_losses, should_stop = train(args, trainer, task, epoch_itr)
+            if should_stop:
+                break
+
+            # only use first validation loss to update the learning rate
+            lr = trainer.lr_step(epoch_itr[0].epoch, valid_losses[0])
+
+            previous_itrs = epoch_itr
+            epoch_itr = []
+
+            for itr in previous_itrs:
+                epoch_itr.append(trainer.get_train_iterator(
+                    itr.next_epoch_idx,
+                    # sharded data: get train iterator for next epoch
+                    load_dataset=task.has_sharded_data("train"),
+                ))
+        train_meter.stop()
+        logger.info("done training in {:.1f} seconds".format(train_meter.sum))
+        return
+
+
     # Train until the learning rate gets too small
+
     max_epoch = args.max_epoch or math.inf
     lr = trainer.get_lr()
     train_meter = meters.StopwatchMeter()
@@ -164,40 +195,89 @@ def should_stop_early(args, valid_loss):
 @metrics.aggregate("train")
 def train(args, trainer, task, epoch_itr):
     """Train the model for one epoch and return validation losses."""
-    # Initialize data iterator
-    itr = epoch_itr.next_epoch_itr(
-        fix_batches_to_gpus=args.fix_batches_to_gpus,
-        shuffle=(epoch_itr.next_epoch_idx > args.curriculum),
-    )
-    update_freq = (
-        args.update_freq[epoch_itr.epoch - 1]
-        if epoch_itr.epoch <= len(args.update_freq)
-        else args.update_freq[-1]
-    )
-    itr = iterators.GroupedIterator(itr, update_freq)
-    if getattr(args, "tpu", False):
-        itr = utils.tpu_data_loader(itr)
-    progress = progress_bar.progress_bar(
-        itr,
-        log_format=args.log_format,
-        log_interval=args.log_interval,
-        epoch=epoch_itr.epoch,
-        tensorboard_logdir=(
-            args.tensorboard_logdir if distributed_utils.is_master(args) else None
-        ),
-        default_log_format=("tqdm" if not args.no_progress_bar else "simple"),
-    )
+    if isinstance(epoch_itr, list):
+        itrs = []
+        for itr in epoch_itr:
+            # Initialize data iterators
+            itrs.append(itr.next_epoch_itr(
+                fix_batches_to_gpus=args.fix_batches_to_gpus,
+                shuffle=(itr.next_epoch_idx > args.curriculum),
+            ))
+    
+        update_freq = (
+            args.update_freq[epoch_itr[0].epoch - 1]
+            if epoch_itr[0].epoch <= len(args.update_freq)
+            else args.update_freq[-1]
+        )
 
-    trainer.begin_epoch(epoch_itr.epoch)
+        grouped_itrs = []
+        for itr in itrs:
+            grouped_itrs.append(iterators.GroupedIterator(itr, update_freq))
+
+        # not supported
+        # if getattr(args, "tpu", False):
+        #     itr = utils.tpu_data_loader(itr)
+
+        progress = progress_bar.progress_bar(
+            grouped_itrs,
+            log_format=args.log_format,
+            log_interval=args.log_interval,
+            epoch=epoch_itr[0].epoch,
+            tensorboard_logdir=(
+                args.tensorboard_logdir if distributed_utils.is_master(args) else None
+            ),
+            default_log_format=("simplecluster"),
+
+        )
+
+        trainer.begin_epoch(epoch_itr[0].epoch)
+
+    else:
+        # Initialize data iterators
+        itr = epoch_itr.next_epoch_itr(
+            fix_batches_to_gpus=args.fix_batches_to_gpus,
+            shuffle=(epoch_itr.next_epoch_idx > args.curriculum),
+        )
+
+        update_freq = (
+            args.update_freq[epoch_itr.epoch - 1]
+            if epoch_itr.epoch <= len(args.update_freq)
+            else args.update_freq[-1]
+        )
+
+
+        itr = iterators.GroupedIterator(itr, update_freq)
+
+        # not supported
+        # if getattr(args, "tpu", False):
+        #     itr = utils.tpu_data_loader(itr)
+
+        progress = progress_bar.progress_bar(
+            itr,
+            log_format=args.log_format,
+            log_interval=args.log_interval,
+            epoch=epoch_itr.epoch,
+            tensorboard_logdir=(
+                args.tensorboard_logdir if distributed_utils.is_master(args) else None
+            ),
+            default_log_format=("tqdm" if not args.no_progress_bar else "simple"),
+        )
+
+        trainer.begin_epoch(epoch_itr.epoch)
 
     valid_subsets = args.valid_subset.split(",")
     should_stop = False
     num_updates = trainer.get_num_updates()
     for i, samples in enumerate(progress):
+
+        if 'cluster_ids' not in samples[0]['net_input']:
+            samples[0]['net_input']['cluster_ids'] = numpy.full((1), 0, dtype=numpy.single)
+
         with metrics.aggregate("train_inner"), torch.autograd.profiler.record_function(
             "train_step-%d" % i
         ):
             log_output = trainer.train_step(samples)
+        
 
         if log_output is not None:  # not OOM, overflow, ...
             # log mid-epoch stats
@@ -210,16 +290,25 @@ def train(args, trainer, task, epoch_itr):
                 # the end-of-epoch stats will still be preserved
                 metrics.reset_meters("train_inner")
 
-        end_of_epoch = not itr.has_next()
-        valid_losses, should_stop = validate_and_save(
-            args, trainer, task, epoch_itr, valid_subsets, end_of_epoch
-        )
+        if isinstance(itr, list):
+            end_of_epoch = not itr[0].has_next()
+            valid_losses, should_stop = validate_and_save(
+                args, trainer, task, epoch_itr[0], valid_subsets, end_of_epoch
+            )
 
-        if should_stop:
-            break
+            if should_stop:
+                break
+        else:
+            end_of_epoch = not itr.has_next()
+            valid_losses, should_stop = validate_and_save(
+                args, trainer, task, epoch_itr, valid_subsets, end_of_epoch
+            )
+
+            if should_stop:
+                break
 
     # log end-of-epoch stats
-    logger.info("end of epoch {} (average epoch stats below)".format(epoch_itr.epoch))
+    logger.info("end of epoch {} (average epoch stats below)".format(epoch_itr[0].epoch))
     stats = get_training_stats(metrics.get_smoothed_values("train"))
     progress.print(stats, tag="train", step=num_updates)
 

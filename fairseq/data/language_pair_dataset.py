@@ -23,6 +23,7 @@ def collate(
     input_feeding=True,
     pad_to_length=None,
 ):
+
     if len(samples) == 0:
         return {}
 
@@ -95,11 +96,15 @@ def collate(
     else:
         ntokens = src_lengths.sum().item()
 
+ 
+   # cluster_ids = torch.ones(len(samples), dtype=torch.float64)
+
     batch = {
         'id': id,
         'nsentences': len(samples),
         'ntokens': ntokens,
         'net_input': {
+           # 'cluster_ids': cluster_ids,
             'src_tokens': src_tokens,
             'src_lengths': src_lengths,
         },
@@ -198,6 +203,7 @@ class LanguagePairDataset(FairseqDataset):
         src_lang_id=None,
         tgt_lang_id=None,
     ):
+    
         if tgt_dict is not None:
             assert src_dict.pad() == tgt_dict.pad()
             assert src_dict.eos() == tgt_dict.eos()
@@ -356,6 +362,7 @@ class LanguagePairDataset(FairseqDataset):
                 res['tgt_lang_id'] = torch.LongTensor(
                             [[self.tgt_lang_id]]
                             ).expand(bsz, 1).to(src_tokens)
+      
         return res
 
     def num_tokens(self, index):
